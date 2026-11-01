@@ -34,6 +34,17 @@ export const updateProject = (id, data) => api.put(`/projects/${id}`, data);
 export const deleteProject = (id) => api.delete(`/projects/${id}`);
 export const toggleLike = (id) => api.post(`/projects/${id}/like`);
 
+// ===== APPLICATIONS (COLLABORATION) =====
+export const applyToProject = (projectId, data) => api.post(`/applications/apply/${projectId}`, data);
+export const getProjectApplications = (projectId) => api.get(`/applications/project/${projectId}`);
+export const updateApplicationStatus = (id, data) => api.put(`/applications/${id}/status`, data);
+export const getMyApplications = () => api.get('/applications/my');
+
+// ===== NOTIFICATIONS =====
+export const getNotifications = () => api.get('/notifications');
+export const markNotificationRead = (id) => api.put(`/notifications/${id}/read`);
+export const markAllNotificationsRead = () => api.put('/notifications/read-all');
+
 // ===== AI =====
 export const aiGenerateDescription = (data) => api.post('/ai/generate-description', data);
 export const aiGenerateBio = (data) => api.post('/ai/generate-bio', data);

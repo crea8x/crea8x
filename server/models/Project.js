@@ -1,5 +1,43 @@
 const mongoose = require('mongoose');
 
+const roleNeededSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    skills: [{
+        type: String,
+        trim: true,
+    }],
+    spots: {
+        type: Number,
+        default: 1,
+        min: 1,
+    },
+    filled: {
+        type: Number,
+        default: 0,
+    },
+});
+
+const teamMemberSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    role: {
+        type: String,
+        default: 'Collaborator',
+        trim: true,
+    },
+    joinedAt: {
+        type: Date,
+        default: Date.now,
+    },
+});
+
 const projectSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -11,6 +49,11 @@ const projectSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Project description is required'],
         maxlength: 2000,
+    },
+    stage: {
+        type: String,
+        enum: ['idea', 'recruiting', 'building', 'launched'],
+        default: 'recruiting',
     },
     thumbnail: {
         type: String,
@@ -28,6 +71,8 @@ const projectSchema = new mongoose.Schema({
         type: String,
         trim: true,
     }],
+    rolesNeeded: [roleNeededSchema],
+    team: [teamMemberSchema],
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

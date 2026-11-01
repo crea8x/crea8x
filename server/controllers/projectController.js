@@ -1,19 +1,24 @@
 const Project = require('../models/Project');
 const User = require('../models/User');
 
-// GET /api/projects — List all projects (with optional tag filter + smart sorting)
+// GET /api/projects — List all projects (with optional tag/stage filter + smart sorting)
 const getProjects = async (req, res) => {
     try {
-        const { tag, search, recommended } = req.query;
+        const { tag, search, stage, recommended } = req.query;
         let filter = {};
 
         if (tag) {
             filter.tags = { $in: [new RegExp(tag, 'i')] };
         }
+        if (stage && stage !== 'all') {
+            filter.stage = stage;
+        }
         if (search) {
             filter.$or = [
                 { title: new RegExp(search, 'i') },
                 { description: new RegExp(search, 'i') },
+                { 'rolesNeeded.title': new RegExp(search, 'i') },
+                { 'rolesNeeded.skills': { $in: [new RegExp(search, 'i')] } },
             ];
         }
 
@@ -36,14 +41,18 @@ const getProjects = async (req, res) => {
                     { $sort: { relevanceScore: -1, createdAt: -1 } },
                     { $limit: 20 },
                 ]);
-                // Populate author
-                projects = await Project.populate(projects, { path: 'author', select: '-password' });
+                // Populate author and team
+                projects = await Project.populate(projects, [
+                    { path: 'author', select: '-password' },
+                    { path: 'team.user', select: 'fullName username avatar skills' },
+                ]);
                 return res.json(projects);
             }
         }
 
         projects = await Project.find(filter)
             .populate('author', '-password')
+            .populate('team.user', 'fullName username avatar skills')
             .sort({ createdAt: -1 })
             .limit(50);
 
@@ -56,7 +65,9 @@ const getProjects = async (req, res) => {
 // GET /api/projects/:id
 const getProjectById = async (req, res) => {
     try {
-        const project = await Project.findById(req.params.id).populate('author', '-password');
+        const project = await Project.findById(req.params.id)
+            .populate('author', '-password')
+            .populate('team.user', 'fullName username avatar skills');
         if (!project) {
             return res.status(404).json({ message: 'Project not found' });
         }
@@ -69,11 +80,18 @@ const getProjectById = async (req, res) => {
 // POST /api/projects
 const createProject = async (req, res) => {
     try {
-        const { title, description, thumbnail, liveUrl, repoUrl, tags } = req.body;
+        const { title, description, thumbnail, liveUrl, repoUrl, tags, stage, rolesNeeded } = req.body;
 
         if (!title || !description) {
             return res.status(400).json({ message: 'Title and description are required' });
         }
+
+        // Author is automatically the project creator/owner in team
+        const team = [{
+            user: req.user._id,
+            role: 'Project Creator',
+            joinedAt: new Date(),
+        }];
 
         const project = await Project.create({
             title,
@@ -82,10 +100,16 @@ const createProject = async (req, res) => {
             liveUrl,
             repoUrl,
             tags: tags || [],
+            stage: stage || 'recruiting',
+            rolesNeeded: rolesNeeded || [],
+            team,
             author: req.user._id,
         });
 
-        const populated = await project.populate('author', '-password');
+        const populated = await project.populate([
+            { path: 'author', select: '-password' },
+            { path: 'team.user', select: 'fullName username avatar skills' },
+        ]);
         res.status(201).json(populated);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -103,12 +127,14 @@ const updateProject = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized' });
         }
 
-        const { title, description, thumbnail, liveUrl, repoUrl, tags } = req.body;
+        const { title, description, thumbnail, liveUrl, repoUrl, tags, stage, rolesNeeded } = req.body;
         const updated = await Project.findByIdAndUpdate(
             req.params.id,
-            { title, description, thumbnail, liveUrl, repoUrl, tags },
+            { title, description, thumbnail, liveUrl, repoUrl, tags, stage, rolesNeeded },
             { new: true, runValidators: true }
-        ).populate('author', '-password');
+        )
+            .populate('author', '-password')
+            .populate('team.user', 'fullName username avatar skills');
 
         res.json(updated);
     } catch (error) {
@@ -152,7 +178,10 @@ const toggleLike = async (req, res) => {
         }
 
         await project.save();
-        const populated = await project.populate('author', '-password');
+        const populated = await project.populate([
+            { path: 'author', select: '-password' },
+            { path: 'team.user', select: 'fullName username avatar skills' },
+        ]);
         res.json(populated);
     } catch (error) {
         res.status(500).json({ message: error.message });
