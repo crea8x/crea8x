@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getUserById, getProjects, updateUser, aiGenerateBio } from '../services/api';
+import { getUserById, updateUser, aiGenerateBio } from '../services/api';
 
 const Profile = () => {
     const { id } = useParams();
     const { user: currentUser, updateUserData } = useAuth();
     const [profile, setProfile] = useState(null);
-    const [projects, setProjects] = useState([]);
+    const [activeTab, setActiveTab] = useState('created'); // 'created' or 'collabs'
     const [editing, setEditing] = useState(false);
     const [editForm, setEditForm] = useState({});
     const [loading, setLoading] = useState(true);
@@ -23,15 +23,8 @@ const Profile = () => {
     const fetchProfile = async () => {
         setLoading(true);
         try {
-            const [userRes, projRes] = await Promise.all([
-                getUserById(id),
-                getProjects(),
-            ]);
+            const userRes = await getUserById(id);
             setProfile(userRes.data);
-            const userProjects = projRes.data.filter(
-                (p) => (p.author?._id || p.author) === id
-            );
-            setProjects(userProjects);
             setEditForm({
                 fullName: userRes.data.fullName || '',
                 bio: userRes.data.bio || '',
@@ -61,7 +54,7 @@ const Profile = () => {
                 },
             };
             const res = await updateUser(id, data);
-            setProfile(res.data);
+            setProfile((prev) => ({ ...prev, ...res.data }));
             updateUserData(res.data);
             setEditing(false);
         } catch (err) {
@@ -88,6 +81,16 @@ const Profile = () => {
     if (loading) return <div className="page"><div className="spinner"></div></div>;
     if (!profile) return <div className="page"><div className="container"><div className="card empty-state"><h3>User not found</h3></div></div></div>;
 
+    const createdProjects = profile.createdProjects || [];
+    const collaborations = profile.collaborations || [];
+
+    const stageLabels = {
+        idea: '💡 Idea',
+        recruiting: '👥 Recruiting',
+        building: '🔨 Building',
+        launched: '🚀 Launched',
+    };
+
     return (
         <div className="page">
             <div className="container">
@@ -97,14 +100,23 @@ const Profile = () => {
                         {(profile.fullName || profile.username).charAt(0).toUpperCase()}
                     </div>
                     <div className="profile-info">
-                        <h1>{profile.fullName || profile.username}</h1>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <h1 style={{ margin: 0 }}>{profile.fullName || profile.username}</h1>
+                            {collaborations.some((c) => c.stage === 'launched') && (
+                                <span className="stage-badge launched" style={{ fontSize: '0.75rem' }}>
+                                    🏆 Verified Product Shipper
+                                </span>
+                            )}
+                        </div>
                         <div className="profile-handle">@{profile.username}</div>
                         {profile.bio && <div className="profile-bio">{profile.bio}</div>}
+
                         <div className="skills-container" style={{ marginBottom: '16px' }}>
                             {profile.skills?.map((s, i) => (
                                 <span key={s} className={`skill-tag ${['', 'cyan', 'pink', 'green'][i % 4]}`}>{s}</span>
                             ))}
                         </div>
+
                         <div className="profile-social-links">
                             {profile.socialLinks?.github && (
                                 <a href={profile.socialLinks.github} target="_blank" rel="noopener noreferrer" className="social-link">GitHub</a>
@@ -116,8 +128,11 @@ const Profile = () => {
                                 <a href={profile.socialLinks.portfolio} target="_blank" rel="noopener noreferrer" className="social-link">Portfolio</a>
                             )}
                         </div>
+
                         {isOwn && !editing && (
-                            <button className="btn btn-secondary btn-sm" style={{ marginTop: '16px' }} onClick={() => setEditing(true)}>Edit Profile</button>
+                            <button className="btn btn-secondary btn-sm" style={{ marginTop: '16px' }} onClick={() => setEditing(true)}>
+                                Edit Profile
+                            </button>
                         )}
                     </div>
                 </div>
@@ -135,7 +150,7 @@ const Profile = () => {
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <label className="form-label">Bio</label>
                                     <button className="btn btn-ai btn-sm" onClick={handleAIBio} disabled={generatingBio} style={{ marginBottom: '8px' }}>
-                                        {generatingBio ? '✨ Generating...' : '✨ AI Generate'}
+                                        {generatingBio ? '✨ Generating...' : '✨ AI Polish Bio'}
                                     </button>
                                 </div>
                                 <textarea className="form-input form-textarea" value={editForm.bio} onChange={(e) => setEditForm({ ...editForm, bio: e.target.value })} placeholder="Tell the world about yourself..." />
@@ -143,7 +158,7 @@ const Profile = () => {
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Skills (comma-separated)</label>
-                                <input className="form-input" value={editForm.skills} onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })} placeholder="React, Node.js, Python" />
+                                <input className="form-input" value={editForm.skills} onChange={(e) => setEditForm({ ...editForm, skills: e.target.value })} placeholder="React, Node.js, Python, Figma" />
                             </div>
                             <div className="form-group">
                                 <label className="form-label">GitHub URL</label>
@@ -167,41 +182,123 @@ const Profile = () => {
                     </div>
                 )}
 
-                {/* Projects */}
-                <div style={{ marginTop: '40px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                        <h2>{isOwn ? 'Your' : `${profile.fullName || profile.username}'s`} Projects</h2>
-                        {isOwn && <Link to="/project/new" className="btn btn-primary btn-sm">+ New Project</Link>}
-                    </div>
-                    {projects.length === 0 ? (
-                        <div className="card empty-state">
-                            <h3>No projects yet</h3>
-                            <p>{isOwn ? 'Start showcasing your work!' : 'This creator hasn\'t added any projects yet.'}</p>
-                        </div>
-                    ) : (
-                        <div className="grid-3">
-                            {projects.map((project) => (
-                                <Link to={`/project/${project._id}`} key={project._id}>
-                                    <div className="card project-card">
-                                        <div className="project-card-thumb" style={project.thumbnail ? { backgroundImage: `url(${project.thumbnail})` } : {}}>
-                                            {!project.thumbnail && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '2rem', opacity: 0.3 }}>🖼️</div>}
-                                        </div>
-                                        <div className="project-card-body">
-                                            <div className="project-card-title">{project.title}</div>
-                                            <div className="project-card-desc">{project.description}</div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <div className="skills-container">
+                {/* Portfolio Navigation Tabs */}
+                <div style={{ marginTop: '40px', marginBottom: '24px', display: 'flex', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                    <button
+                        className={`btn ${activeTab === 'created' ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setActiveTab('created')}
+                    >
+                        💡 Created Projects ({createdProjects.length})
+                    </button>
+                    <button
+                        className={`btn ${activeTab === 'collabs' ? 'btn-primary' : 'btn-secondary'}`}
+                        onClick={() => setActiveTab('collabs')}
+                    >
+                        🤝 Verified Team Collaborations ({collaborations.length})
+                    </button>
+                </div>
+
+                {/* CREATED PROJECTS */}
+                {activeTab === 'created' && (
+                    <div>
+                        {createdProjects.length === 0 ? (
+                            <div className="card empty-state">
+                                <h3>No projects created yet</h3>
+                                <p>{isOwn ? 'Share your first project vision and recruit collaborators!' : 'This creator has not posted any ideas yet.'}</p>
+                                {isOwn && (
+                                    <Link to="/project/new" className="btn btn-primary" style={{ marginTop: '16px' }}>
+                                        + Share New Idea
+                                    </Link>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="grid-3">
+                                {createdProjects.map((project) => (
+                                    <Link to={`/project/${project._id}`} key={project._id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                        <div className="card project-card">
+                                            <div className="project-card-thumb" style={project.thumbnail ? { backgroundImage: `url(${project.thumbnail})` } : {}}>
+                                                {!project.thumbnail && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '2rem', opacity: 0.3 }}>💡</div>}
+                                            </div>
+                                            <div className="project-card-body">
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                    <span className={`stage-badge ${project.stage || 'recruiting'}`} style={{ fontSize: '0.7rem' }}>
+                                                        {stageLabels[project.stage] || 'Recruiting'}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>❤️ {project.likes?.length || 0}</span>
+                                                </div>
+                                                <div className="project-card-title">{project.title}</div>
+                                                <div className="project-card-desc">{project.description}</div>
+                                                <div className="skills-container" style={{ marginTop: '10px' }}>
                                                     {project.tags?.slice(0, 3).map((tag) => <span key={tag} className="skill-tag">{tag}</span>)}
                                                 </div>
-                                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>❤️ {project.likes?.length || 0}</span>
                                             </div>
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                    )}
-                </div>
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* VERIFIED COLLABORATIONS (Feature #6) */}
+                {activeTab === 'collabs' && (
+                    <div>
+                        {collaborations.length === 0 ? (
+                            <div className="card empty-state">
+                                <h3>No team collaborations yet</h3>
+                                <p>
+                                    {isOwn
+                                        ? 'Browse projects on the Explore page and apply to join teams to build your contributor portfolio!'
+                                        : 'This creator has not joined other teams yet.'}
+                                </p>
+                                {isOwn && (
+                                    <Link to="/explore" className="btn btn-primary" style={{ marginTop: '16px' }}>
+                                        Explore Projects to Join →
+                                    </Link>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="grid-3">
+                                {collaborations.map((project) => {
+                                    // Find user's specific role in the project team
+                                    const teamRecord = project.team?.find(
+                                        (m) => (m.user?._id || m.user).toString() === profile._id.toString()
+                                    );
+                                    const memberRole = teamRecord ? teamRecord.role : 'Collaborator';
+
+                                    return (
+                                        <Link to={`/project/${project._id}`} key={project._id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                                            <div className="card project-card" style={{ border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                                                <div className="project-card-thumb" style={project.thumbnail ? { backgroundImage: `url(${project.thumbnail})` } : {}}>
+                                                    {!project.thumbnail && <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: '2rem', opacity: 0.3 }}>🤝</div>}
+                                                </div>
+                                                <div className="project-card-body">
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                        <span className="app-status accepted" style={{ fontSize: '0.72rem' }}>
+                                                            Role: {memberRole}
+                                                        </span>
+                                                        {project.stage === 'launched' && (
+                                                            <span className="stage-badge launched" style={{ fontSize: '0.7rem' }}>
+                                                                🚀 Shipped
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="project-card-title">{project.title}</div>
+                                                    <div className="project-card-desc">{project.description}</div>
+                                                    {project.author && (
+                                                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '8px' }}>
+                                                            Creator: {project.author.fullName || project.author.username}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

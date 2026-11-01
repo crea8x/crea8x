@@ -15,3 +15,4 @@ router.put('/:id/status', protect, updateApplicationStatus);
 router.get('/my', protect, getMyApplications);
 
 module.exports = router;
+

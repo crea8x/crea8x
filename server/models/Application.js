@@ -34,3 +34,4 @@ const applicationSchema = new mongoose.Schema({
 applicationSchema.index({ project: 1, applicant: 1, role: 1 }, { unique: true });
 
 module.exports = mongoose.model('Application', applicationSchema);
+

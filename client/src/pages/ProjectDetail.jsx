@@ -8,6 +8,12 @@ import {
     applyToProject,
     getProjectApplications,
     updateApplicationStatus,
+    addProjectMilestone,
+    toggleProjectMilestone,
+    deleteProjectMilestone,
+    getProjectComments,
+    addProjectComment,
+    deleteProjectComment,
 } from '../services/api';
 
 const ProjectDetail = () => {
@@ -20,6 +26,14 @@ const ProjectDetail = () => {
     const [applications, setApplications] = useState([]);
     const [loadingApps, setLoadingApps] = useState(false);
 
+    // Comments & Q/A state
+    const [comments, setComments] = useState([]);
+    const [newComment, setNewComment] = useState('');
+    const [commentLoading, setCommentLoading] = useState(false);
+
+    // New Milestone state
+    const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
+
     // Apply Modal state
     const [showApplyModal, setShowApplyModal] = useState(false);
     const [selectedRole, setSelectedRole] = useState('');
@@ -30,13 +44,13 @@ const ProjectDetail = () => {
 
     useEffect(() => {
         fetchProject();
+        fetchComments();
     }, [id]);
 
     const fetchProject = async () => {
         try {
             const res = await getProjectById(id);
             setProject(res.data);
-            // If user is the author, load incoming applications
             if (user && (res.data.author?._id || res.data.author) === user._id) {
                 fetchApplications();
             }
@@ -56,6 +70,15 @@ const ProjectDetail = () => {
             console.error('Failed to load applications:', err);
         } finally {
             setLoadingApps(false);
+        }
+    };
+
+    const fetchComments = async () => {
+        try {
+            const res = await getProjectComments(id);
+            setComments(res.data || []);
+        } catch (err) {
+            console.error('Failed to load comments:', err);
         }
     };
 
@@ -105,11 +128,66 @@ const ProjectDetail = () => {
     const handleApplicationDecision = async (appId, status) => {
         try {
             await updateApplicationStatus(appId, { status });
-            // Refresh applications and project team
             fetchApplications();
             fetchProject();
         } catch (err) {
             console.error('Decision error:', err);
+        }
+    };
+
+    // Milestone Actions
+    const handleAddMilestone = async (e) => {
+        e.preventDefault();
+        if (!newMilestoneTitle.trim()) return;
+        try {
+            const res = await addProjectMilestone(id, { title: newMilestoneTitle.trim() });
+            setProject((prev) => ({ ...prev, milestones: res.data }));
+            setNewMilestoneTitle('');
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleToggleMilestone = async (milestoneId) => {
+        try {
+            const res = await toggleProjectMilestone(id, milestoneId);
+            setProject((prev) => ({ ...prev, milestones: res.data }));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    const handleDeleteMilestone = async (milestoneId) => {
+        try {
+            const res = await deleteProjectMilestone(id, milestoneId);
+            setProject((prev) => ({ ...prev, milestones: res.data }));
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
+    // Comment Actions
+    const handleAddComment = async (e) => {
+        e.preventDefault();
+        if (!newComment.trim()) return;
+        setCommentLoading(true);
+        try {
+            const res = await addProjectComment(id, { content: newComment.trim() });
+            setComments((prev) => [...prev, res.data]);
+            setNewComment('');
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setCommentLoading(false);
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        try {
+            await deleteProjectComment(id, commentId);
+            setComments((prev) => prev.filter((c) => c._id !== commentId));
+        } catch (err) {
+            console.error(err);
         }
     };
 
@@ -131,6 +209,10 @@ const ProjectDetail = () => {
     const isTeamMember = project.team?.some(
         (m) => (m.user?._id || m.user) === user?._id
     );
+
+    const hasTeamLinks =
+        project.teamLinks &&
+        (project.teamLinks.discord || project.teamLinks.slack || project.teamLinks.meet || project.teamLinks.notes);
 
     const stageLabels = {
         idea: '💡 Idea Stage',
@@ -192,7 +274,6 @@ const ProjectDetail = () => {
                         </a>
                     )}
 
-                    {/* Apply to Join Button for non-members */}
                     {!isAuthor && !isTeamMember && user && (
                         <button
                             className="btn btn-primary"
@@ -234,6 +315,51 @@ const ProjectDetail = () => {
                         {project.description}
                     </p>
                 </div>
+
+                {/* PRIVATE TEAM WORKSPACE (Feature #4) */}
+                {(isAuthor || isTeamMember) ? (
+                    hasTeamLinks && (
+                        <div
+                            className="card"
+                            style={{
+                                padding: '24px',
+                                marginBottom: '32px',
+                                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(59, 130, 246, 0.08))',
+                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                            }}
+                        >
+                            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '6px', color: '#34d399' }}>
+                                🔓 Team Workspace & Communication
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                                Exclusive channels for accepted team members to collaborate and build.
+                            </p>
+                            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                                {project.teamLinks.discord && (
+                                    <a href={project.teamLinks.discord} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm">
+                                        💬 Discord Server
+                                    </a>
+                                )}
+                                {project.teamLinks.slack && (
+                                    <a href={project.teamLinks.slack} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                                        💼 Slack / Chat
+                                    </a>
+                                )}
+                                {project.teamLinks.meet && (
+                                    <a href={project.teamLinks.meet} target="_blank" rel="noopener noreferrer" className="btn btn-secondary btn-sm">
+                                        📹 Google Meet
+                                    </a>
+                                )}
+                            </div>
+                        </div>
+                    )
+                ) : (
+                    <div className="card" style={{ padding: '16px 20px', marginBottom: '32px', background: 'rgba(255, 255, 255, 0.02)' }}>
+                        <span style={{ fontSize: '0.88rem', color: 'var(--text-muted)' }}>
+                            🔒 <strong>Private Team Handoff:</strong> Discord & meeting links unlock automatically for accepted contributors.
+                        </span>
+                    </div>
+                )}
 
                 {/* Roles Needed Section */}
                 <div className="card" style={{ padding: '28px', marginBottom: '32px' }}>
@@ -284,7 +410,7 @@ const ProjectDetail = () => {
                     )}
                 </div>
 
-                {/* Project Team */}
+                {/* Team Members Section */}
                 <div className="card" style={{ padding: '28px', marginBottom: '32px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px' }}>Team Members ({project.team?.length || 1})</h3>
                     <div className="team-list">
@@ -307,6 +433,136 @@ const ProjectDetail = () => {
                     </div>
                 </div>
 
+                {/* COLLABORATIVE MILESTONES (Feature #5) */}
+                <div className="card" style={{ padding: '28px', marginBottom: '32px' }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px' }}>📋 Milestones & Tasks</h3>
+                    {project.milestones?.length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No milestones created yet.</p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            {project.milestones?.map((m) => (
+                                <div
+                                    key={m._id}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '12px',
+                                        padding: '10px 14px',
+                                        background: 'var(--bg-input)',
+                                        borderRadius: 'var(--radius-sm)',
+                                    }}
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={m.completed}
+                                        disabled={!isAuthor && !isTeamMember}
+                                        onChange={() => handleToggleMilestone(m._id)}
+                                        style={{ width: '18px', height: '18px', cursor: (isAuthor || isTeamMember) ? 'pointer' : 'default' }}
+                                    />
+                                    <span
+                                        style={{
+                                            fontSize: '0.92rem',
+                                            textDecoration: m.completed ? 'line-through' : 'none',
+                                            color: m.completed ? 'var(--text-muted)' : 'var(--text-primary)',
+                                            flex: 1,
+                                        }}
+                                    >
+                                        {m.title}
+                                    </span>
+                                    {isAuthor && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteMilestone(m._id)}
+                                            style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.9rem' }}
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {(isAuthor || isTeamMember) && (
+                        <form onSubmit={handleAddMilestone} style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+                            <input
+                                className="form-input"
+                                placeholder="Add a new milestone or deliverable..."
+                                value={newMilestoneTitle}
+                                onChange={(e) => setNewMilestoneTitle(e.target.value)}
+                            />
+                            <button type="submit" className="btn btn-secondary btn-sm" style={{ whiteSpace: 'nowrap' }}>
+                                + Add Task
+                            </button>
+                        </form>
+                    )}
+                </div>
+
+                {/* Q&A / COMMUNITY DISCUSSION (Feature #3) */}
+                <div className="card" style={{ padding: '28px', marginBottom: '32px' }}>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px' }}>💬 Questions & Discussion ({comments.length})</h3>
+
+                    {/* Comment form */}
+                    {user ? (
+                        <form onSubmit={handleAddComment} style={{ marginBottom: '24px' }}>
+                            <textarea
+                                className="form-input form-textarea"
+                                placeholder="Ask a question about the project vision, scope, or tech stack..."
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                style={{ minHeight: '80px', marginBottom: '10px' }}
+                            />
+                            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                                <button type="submit" className="btn btn-primary btn-sm" disabled={commentLoading || !newComment.trim()}>
+                                    {commentLoading ? 'Posting...' : 'Post Question / Comment'}
+                                </button>
+                            </div>
+                        </form>
+                    ) : (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginBottom: '20px' }}>
+                            <Link to="/login" style={{ color: 'var(--accent-purple)' }}>Sign in</Link> to ask questions or discuss this project.
+                        </p>
+                    )}
+
+                    {/* Comments list */}
+                    {comments.length === 0 ? (
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', textAlign: 'center', padding: '16px 0' }}>
+                            No questions asked yet. Be the first to start the conversation!
+                        </p>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                            {comments.map((c) => (
+                                <div key={c._id} style={{ padding: '14px', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                        <Link to={`/profile/${c.author?._id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none', color: 'inherit' }}>
+                                            <div className="project-card-author-avatar" style={{ width: '24px', height: '24px', fontSize: '0.7rem' }}>
+                                                {(c.author?.fullName || c.author?.username || '?').charAt(0).toUpperCase()}
+                                            </div>
+                                            <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{c.author?.fullName || c.author?.username}</span>
+                                        </Link>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                {new Date(c.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </span>
+                                            {(user?._id === c.author?._id || isAuthor) && (
+                                                <button
+                                                    onClick={() => handleDeleteComment(c._id)}
+                                                    style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem' }}
+                                                >
+                                                    ✕
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', margin: 0, whiteSpace: 'pre-wrap' }}>
+                                        {c.content}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
                 {/* AUTHOR ONLY: Manage Applications */}
                 {isAuthor && (
                     <div className="card" style={{ padding: '28px', border: '1px solid var(--accent-purple)' }}>
@@ -322,7 +578,7 @@ const ProjectDetail = () => {
 
                         {applications.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                                No applications received yet. As creators discover your project on the Explore page, their requests will appear here!
+                                No applications received yet.
                             </div>
                         ) : (
                             <div>
@@ -349,7 +605,6 @@ const ProjectDetail = () => {
                                             </div>
                                         </div>
 
-                                        {/* Applicant Skills */}
                                         {app.applicant?.skills?.length > 0 && (
                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
                                                 {app.applicant.skills.map((s) => (
@@ -360,14 +615,12 @@ const ProjectDetail = () => {
                                             </div>
                                         )}
 
-                                        {/* Pitch Message */}
                                         {app.message && (
                                             <div style={{ background: 'var(--bg-input)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', fontSize: '0.85rem', marginBottom: '12px' }}>
                                                 "{app.message}"
                                             </div>
                                         )}
 
-                                        {/* Action buttons if status is pending */}
                                         {app.status === 'pending' && (
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                 <button

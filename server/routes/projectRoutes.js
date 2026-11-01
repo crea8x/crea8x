@@ -1,5 +1,18 @@
 const express = require('express');
-const { getProjects, getProjectById, createProject, updateProject, deleteProject, toggleLike } = require('../controllers/projectController');
+const {
+    getProjects,
+    getProjectById,
+    createProject,
+    updateProject,
+    deleteProject,
+    toggleLike,
+    addMilestone,
+    toggleMilestone,
+    deleteMilestone,
+    getComments,
+    addComment,
+    deleteComment,
+} = require('../controllers/projectController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -10,5 +23,15 @@ router.post('/', protect, createProject);
 router.put('/:id', protect, updateProject);
 router.delete('/:id', protect, deleteProject);
 router.post('/:id/like', protect, toggleLike);
+
+// Milestones
+router.post('/:id/milestones', protect, addMilestone);
+router.put('/:id/milestones/:milestoneId/toggle', protect, toggleMilestone);
+router.delete('/:id/milestones/:milestoneId', protect, deleteMilestone);
+
+// Comments
+router.get('/:id/comments', protect, getComments);
+router.post('/:id/comments', protect, addComment);
+router.delete('/:id/comments/:commentId', protect, deleteComment);
 
 module.exports = router;

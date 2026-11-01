@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Project = require('../models/Project');
 
 // GET /api/users — List all users (with optional skill filter)
 const getUsers = async (req, res) => {
@@ -23,14 +24,33 @@ const getUsers = async (req, res) => {
     }
 };
 
-// GET /api/users/:id — Get single user profile
+// GET /api/users/:id — Get single user profile with creations and collaborations
 const getUserById = async (req, res) => {
     try {
         const user = await User.findById(req.params.id).select('-password');
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
-        res.json(user);
+
+        // Projects created by this user
+        const createdProjects = await Project.find({ author: user._id })
+            .select('title description stage thumbnail tags createdAt likes')
+            .sort({ createdAt: -1 });
+
+        // Projects this user collaborated on as an accepted team member (excluding authored)
+        const collaborations = await Project.find({
+            'team.user': user._id,
+            author: { $ne: user._id },
+        })
+            .select('title description stage thumbnail tags createdAt team author')
+            .populate('author', 'fullName username avatar')
+            .sort({ createdAt: -1 });
+
+        const userObj = user.toObject();
+        userObj.createdProjects = createdProjects;
+        userObj.collaborations = collaborations;
+
+        res.json(userObj);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

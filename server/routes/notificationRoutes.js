@@ -13,3 +13,4 @@ router.put('/read-all', protect, markAllAsRead);
 router.put('/:id/read', protect, markAsRead);
 
 module.exports = router;
+

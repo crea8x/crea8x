@@ -38,6 +38,26 @@ const teamMemberSchema = new mongoose.Schema({
     },
 });
 
+const milestoneSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true,
+        trim: true,
+    },
+    completed: {
+        type: Boolean,
+        default: false,
+    },
+    assignedTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now,
+    },
+});
+
 const projectSchema = new mongoose.Schema({
     title: {
         type: String,
@@ -73,6 +93,14 @@ const projectSchema = new mongoose.Schema({
     }],
     rolesNeeded: [roleNeededSchema],
     team: [teamMemberSchema],
+    milestones: [milestoneSchema],
+    // Private collaboration links (visible only to team & author)
+    teamLinks: {
+        discord: { type: String, default: '' },
+        slack: { type: String, default: '' },
+        meet: { type: String, default: '' },
+        notes: { type: String, default: '' },
+    },
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

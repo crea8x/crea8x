@@ -9,6 +9,47 @@ const getGenAI = () => {
     return genAI;
 };
 
+// POST /api/ai/architect-idea — Full Idea-to-Team & Roadmap Generator
+const architectIdea = async (req, res) => {
+    try {
+        const ai = getGenAI();
+        if (!ai) {
+            return res.status(503).json({ message: 'AI service not configured. Please set GEMINI_API_KEY in .env' });
+        }
+
+        const { title, prompt: userPrompt } = req.body;
+        if (!title) {
+            return res.status(400).json({ message: 'Idea title or summary is required' });
+        }
+
+        const model = ai.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const prompt = `You are an expert startup CTO and product architect. Given a project idea titled "${title}"${userPrompt ? ` with notes: "${userPrompt}"` : ''}.
+Analyze the vision and provide a complete project startup plan. Return ONLY a valid JSON object with this exact structure, no markdown:
+{
+  "expandedDescription": "2-paragraph compelling project pitch explaining what it solves and why creators should collaborate on it.",
+  "suggestedRoles": [
+    { "title": "Role Title", "skills": ["Skill1", "Skill2"], "spots": 1 }
+  ],
+  "suggestedTags": ["Tag1", "Tag2", "Tag3", "Tag4"],
+  "initialMilestones": [
+    "Milestone 1 description",
+    "Milestone 2 description",
+    "Milestone 3 description"
+  ]
+}
+Generate 2 to 4 realistic contributor roles needed to build this MVP (e.g. Frontend, Backend, UI/UX, AI Engineer, Mobile Dev).`;
+
+        const result = await model.generateContent(prompt);
+        let text = result.response.text().trim();
+        text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+
+        const plan = JSON.parse(text);
+        res.json(plan);
+    } catch (error) {
+        res.status(500).json({ message: 'AI architect failed: ' + error.message });
+    }
+};
+
 // POST /api/ai/generate-description
 const generateDescription = async (req, res) => {
     try {
@@ -77,8 +118,6 @@ const suggestTags = async (req, res) => {
 
         const result = await model.generateContent(prompt);
         let text = result.response.text().trim();
-
-        // Clean up markdown code blocks if present
         text = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
 
         const tags = JSON.parse(text);
@@ -108,7 +147,8 @@ Provide skill gap analysis. Return ONLY a JSON object with this exact structure,
   "suggestedSkills": ["skill1", "skill2", "skill3"],
   "reasoning": "Brief explanation of why these skills complement the existing ones",
   "trendingCombination": "A trending tech stack that includes some of their skills"
-}`;
+}
+`;
 
         const result = await model.generateContent(prompt);
         let text = result.response.text().trim();
@@ -121,4 +161,10 @@ Provide skill gap analysis. Return ONLY a JSON object with this exact structure,
     }
 };
 
-module.exports = { generateDescription, generateBio, suggestTags, getSkillInsights };
+module.exports = {
+    architectIdea,
+    generateDescription,
+    generateBio,
+    suggestTags,
+    getSkillInsights,
+};

@@ -1,9 +1,16 @@
 const express = require('express');
-const { generateDescription, generateBio, suggestTags, getSkillInsights } = require('../controllers/aiController');
+const {
+    architectIdea,
+    generateDescription,
+    generateBio,
+    suggestTags,
+    getSkillInsights,
+} = require('../controllers/aiController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+router.post('/architect-idea', protect, architectIdea);
 router.post('/generate-description', protect, generateDescription);
 router.post('/generate-bio', protect, generateBio);
 router.post('/suggest-tags', protect, suggestTags);

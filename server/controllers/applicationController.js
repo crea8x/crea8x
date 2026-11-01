@@ -189,3 +189,4 @@ module.exports = {
     updateApplicationStatus,
     getMyApplications,
 };
+
