@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Environment
+server/.env
+.env
+
+# Build
+client/dist/
+client/build/
+
+# Vite
+*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python (old Django)
+Crea8X/
+__pycache__/
+*.pyc
+*.pyo
+db.sqlite3
+*.sqlite3
+
+# Logs
+*.log
+npm-debug.log*
