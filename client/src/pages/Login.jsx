@@ -22,7 +22,11 @@ const Login = () => {
         try {
             const res = await loginUser(formData);
             login(res.data);
-            navigate('/dashboard');
+            if (res.data.role === 'admin') {
+                navigate('/admin');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed');
         } finally {
@@ -71,7 +75,14 @@ const Login = () => {
                 </form>
 
                 <div className="auth-footer">
-                    Don't have an account? <Link to="/register">Create One</Link>
+                    <div>
+                        Don't have an account? <Link to="/register">Create One</Link>
+                    </div>
+                    <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-color)', fontSize: '0.8rem' }}>
+                        <Link to="/admin/login" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
+                            🛡️ Staff Operations Portal →
+                        </Link>
+                    </div>
                 </div>
             </div>
         </div>

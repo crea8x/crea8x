@@ -89,6 +89,63 @@ const login = async (req, res) => {
     }
 };
 
+// POST /api/auth/admin-login (Dedicated Admin Portal Authentication)
+const adminLogin = async (req, res) => {
+    try {
+        const { identifier, email, password } = req.body;
+        const loginQuery = (identifier || email || '').trim();
+
+        if (!loginQuery || !password) {
+            return res.status(400).json({ message: 'Please provide admin username or email and password' });
+        }
+
+        const user = await User.findOne({
+            $or: [
+                { email: loginQuery.toLowerCase() },
+                { username: loginQuery },
+            ],
+        });
+
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid administrative credentials' });
+        }
+
+        // Strict Admin Gate: Only users with role === 'admin' can authenticate here
+        if (user.role !== 'admin') {
+            return res.status(403).json({
+                message: 'Access Denied: You do not have platform administrator privileges. Please use the Creator Login.',
+            });
+        }
+
+        if (user.status === 'suspended') {
+            return res.status(403).json({
+                message: 'Your administrative account has been suspended. Please contact support.',
+            });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid administrative credentials' });
+        }
+
+        res.json({
+            _id: user._id,
+            username: user.username,
+            email: user.email,
+            fullName: user.fullName,
+            bio: user.bio,
+            avatar: user.avatar,
+            skills: user.skills,
+            socialLinks: user.socialLinks,
+            role: user.role,
+            status: user.status,
+            token: generateToken(user._id),
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // GET /api/auth/me
 const getMe = async (req, res) => {
     try {
@@ -99,4 +156,4 @@ const getMe = async (req, res) => {
     }
 };
 
-module.exports = { register, login, getMe };
+module.exports = { register, login, adminLogin, getMe };
