@@ -29,6 +29,7 @@ export const getRecommendations = (id) => api.get(`/users/${id}/recommendations`
 // ===== PROJECTS =====
 export const getProjects = (params) => api.get('/projects', { params });
 export const getProjectById = (id) => api.get(`/projects/${id}`);
+export const getRecommendedCreatorsForProject = (id) => api.get(`/projects/${id}/recommended-creators`);
 export const createProject = (data) => api.post('/projects', data);
 export const updateProject = (id, data) => api.put(`/projects/${id}`, data);
 export const deleteProject = (id) => api.delete(`/projects/${id}`);
@@ -44,8 +45,9 @@ export const getProjectComments = (id) => api.get(`/projects/${id}/comments`);
 export const addProjectComment = (id, data) => api.post(`/projects/${id}/comments`, data);
 export const deleteProjectComment = (id, commentId) => api.delete(`/projects/${id}/comments/${commentId}`);
 
-// ===== APPLICATIONS (COLLABORATION) =====
+// ===== APPLICATIONS & INVITATIONS (COLLABORATION) =====
 export const applyToProject = (projectId, data) => api.post(`/applications/apply/${projectId}`, data);
+export const inviteCreatorToProject = (data) => api.post('/applications/invite', data);
 export const getProjectApplications = (projectId) => api.get(`/applications/project/${projectId}`);
 export const updateApplicationStatus = (id, data) => api.put(`/applications/${id}/status`, data);
 export const getMyApplications = () => api.get('/applications/my');

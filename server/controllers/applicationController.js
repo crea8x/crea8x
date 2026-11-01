@@ -19,12 +19,10 @@ const applyToProject = async (req, res) => {
             return res.status(404).json({ message: 'Project not found' });
         }
 
-        // Author cannot apply to their own project
         if (project.author.toString() === applicantId.toString()) {
             return res.status(400).json({ message: 'You cannot apply to your own project' });
         }
 
-        // Check if user is already on the team
         const alreadyInTeam = project.team.some(
             (m) => m.user.toString() === applicantId.toString()
         );
@@ -32,7 +30,6 @@ const applyToProject = async (req, res) => {
             return res.status(400).json({ message: 'You are already a team member on this project' });
         }
 
-        // Check for existing pending application for this role
         const existingApp = await Application.findOne({
             project: projectId,
             applicant: applicantId,
@@ -47,10 +44,10 @@ const applyToProject = async (req, res) => {
             project: projectId,
             applicant: applicantId,
             role,
+            origin: 'application',
             message: message || '',
         });
 
-        // Create notification for the project author
         const applicant = await User.findById(applicantId);
         await Notification.create({
             recipient: project.author,
@@ -66,6 +63,48 @@ const applyToProject = async (req, res) => {
         ]);
 
         res.status(201).json(populated);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// POST /api/applications/invite — Owner invites a creator to join
+const inviteCreator = async (req, res) => {
+    try {
+        const { projectId, userId, role, message } = req.body;
+        if (!projectId || !userId || !role) {
+            return res.status(400).json({ message: 'Project, user, and role are required' });
+        }
+
+        const project = await Project.findById(projectId);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        if (project.author.toString() !== req.user._id.toString()) {
+            return res.status(403).json({ message: 'Only project owner can send invitations' });
+        }
+
+        const isAlreadyMember = project.team.some((m) => m.user.toString() === userId.toString());
+        if (isAlreadyMember) {
+            return res.status(400).json({ message: 'User is already a member of this project team' });
+        }
+
+        const application = await Application.create({
+            project: projectId,
+            applicant: userId,
+            role,
+            origin: 'invite',
+            message: message || '',
+        });
+
+        await Notification.create({
+            recipient: userId,
+            sender: req.user._id,
+            project: projectId,
+            type: 'project_invite',
+            message: `🎉 ${req.user.fullName || req.user.username} invited you to join "${project.title}" as ${role}!`,
+        });
+
+        res.status(201).json(application);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -95,7 +134,7 @@ const getProjectApplications = async (req, res) => {
     }
 };
 
-// PUT /api/applications/:id/status — Accept or Reject application
+// PUT /api/applications/:id/status — Accept or Reject application/invite
 const updateApplicationStatus = async (req, res) => {
     try {
         const { status } = req.body;
@@ -112,7 +151,15 @@ const updateApplicationStatus = async (req, res) => {
         }
 
         const project = await Project.findById(application.project._id);
-        if (project.author.toString() !== req.user._id.toString()) {
+        const currentUserId = req.user._id.toString();
+        const isOwner = project.author.toString() === currentUserId;
+        const isApplicant = application.applicant._id.toString() === currentUserId;
+
+        // If it's an invite: the recipient (applicant) decides. If it's an application: the owner decides.
+        if (application.origin === 'invite' && !isApplicant && !isOwner) {
+            return res.status(403).json({ message: 'Not authorized to respond to this invite' });
+        }
+        if (application.origin === 'application' && !isOwner) {
             return res.status(403).json({ message: 'Only the project creator can review applications' });
         }
 
@@ -120,7 +167,6 @@ const updateApplicationStatus = async (req, res) => {
         await application.save();
 
         if (status === 'accepted') {
-            // Add to project team if not already added
             const isAlreadyMember = project.team.some(
                 (m) => m.user.toString() === application.applicant._id.toString()
             );
@@ -133,7 +179,6 @@ const updateApplicationStatus = async (req, res) => {
                 });
             }
 
-            // Update filled count in rolesNeeded
             const roleObj = project.rolesNeeded.find((r) => r.title.toLowerCase() === application.role.toLowerCase());
             if (roleObj) {
                 roleObj.filled = (roleObj.filled || 0) + 1;
@@ -141,22 +186,19 @@ const updateApplicationStatus = async (req, res) => {
 
             await project.save();
 
-            // Notify applicant
+            // Notify recipient
+            const notifyTarget = application.origin === 'invite' ? project.author : application.applicant._id;
+            const notificationMsg =
+                application.origin === 'invite'
+                    ? `🎉 ${application.applicant.fullName || application.applicant.username} accepted your invitation to join "${project.title}"!`
+                    : `🎉 You've been accepted to join "${project.title}" as ${application.role}!`;
+
             await Notification.create({
-                recipient: application.applicant._id,
+                recipient: notifyTarget,
                 sender: req.user._id,
                 project: project._id,
                 type: 'application_accepted',
-                message: `🎉 Great news! You've been accepted to join "${project.title}" as ${application.role}!`,
-            });
-        } else {
-            // Notify applicant of rejection
-            await Notification.create({
-                recipient: application.applicant._id,
-                sender: req.user._id,
-                project: project._id,
-                type: 'application_rejected',
-                message: `Your application to join "${project.title}" as ${application.role} was not selected this time.`,
+                message: notificationMsg,
             });
         }
 
@@ -166,7 +208,7 @@ const updateApplicationStatus = async (req, res) => {
     }
 };
 
-// GET /api/applications/my — Current user's applications
+// GET /api/applications/my — Current user's applications & invitations
 const getMyApplications = async (req, res) => {
     try {
         const applications = await Application.find({ applicant: req.user._id })
@@ -185,8 +227,8 @@ const getMyApplications = async (req, res) => {
 
 module.exports = {
     applyToProject,
+    inviteCreator,
     getProjectApplications,
     updateApplicationStatus,
     getMyApplications,
 };
-

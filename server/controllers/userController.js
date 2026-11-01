@@ -63,11 +63,11 @@ const updateUser = async (req, res) => {
             return res.status(403).json({ message: 'Not authorized to update this profile' });
         }
 
-        const { fullName, bio, avatar, skills, socialLinks } = req.body;
+        const { fullName, bio, avatar, skills, availability, weeklyHours, socialLinks } = req.body;
 
         const user = await User.findByIdAndUpdate(
             req.params.id,
-            { fullName, bio, avatar, skills, socialLinks },
+            { fullName, bio, avatar, skills, availability, weeklyHours, socialLinks },
             { new: true, runValidators: true }
         ).select('-password');
 

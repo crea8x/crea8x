@@ -350,6 +350,45 @@ const deleteComment = async (req, res) => {
     }
 };
 
+// GET /api/projects/:id/recommended-creators — AI/Skill-based candidate recommendations for this project
+const getRecommendedCreatorsForProject = async (req, res) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) return res.status(404).json({ message: 'Project not found' });
+
+        const neededSkills = new Set();
+        project.rolesNeeded?.forEach((r) => r.skills?.forEach((s) => neededSkills.add(s.toLowerCase())));
+        project.tags?.forEach((t) => neededSkills.add(t.toLowerCase()));
+
+        const excludeIds = [project.author];
+        project.team?.forEach((m) => excludeIds.push(m.user));
+
+        const candidates = await User.find({ _id: { $nin: excludeIds } })
+            .select('fullName username avatar bio skills availability weeklyHours')
+            .lean();
+
+        const scored = candidates
+            .map((c) => {
+                if (!c.skills?.length || neededSkills.size === 0) return null;
+                const matched = c.skills.filter((s) => neededSkills.has(s.toLowerCase()));
+                if (matched.length === 0) return null;
+                const matchScore = Math.min(99, Math.round((matched.length / Math.min(neededSkills.size, 3)) * 100));
+                return {
+                    ...c,
+                    matchScore,
+                    matchedSkills: matched,
+                };
+            })
+            .filter(Boolean)
+            .sort((a, b) => b.matchScore - a.matchScore)
+            .slice(0, 6);
+
+        res.json(scored);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getProjects,
     getProjectById,
@@ -363,4 +402,5 @@ module.exports = {
     getComments,
     addComment,
     deleteComment,
+    getRecommendedCreatorsForProject,
 };

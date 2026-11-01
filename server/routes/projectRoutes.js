@@ -12,6 +12,7 @@ const {
     getComments,
     addComment,
     deleteComment,
+    getRecommendedCreatorsForProject,
 } = require('../controllers/projectController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -19,6 +20,7 @@ const router = express.Router();
 
 router.get('/', protect, getProjects);
 router.get('/:id', protect, getProjectById);
+router.get('/:id/recommended-creators', protect, getRecommendedCreatorsForProject);
 router.post('/', protect, createProject);
 router.put('/:id', protect, updateProject);
 router.delete('/:id', protect, deleteProject);

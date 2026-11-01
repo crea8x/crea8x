@@ -6,6 +6,8 @@ import {
     toggleLike,
     deleteProject,
     applyToProject,
+    inviteCreatorToProject,
+    getRecommendedCreatorsForProject,
     getProjectApplications,
     updateApplicationStatus,
     addProjectMilestone,
@@ -25,6 +27,12 @@ const ProjectDetail = () => {
     const [loading, setLoading] = useState(true);
     const [applications, setApplications] = useState([]);
     const [loadingApps, setLoadingApps] = useState(false);
+
+    // AI Matchmaker Recommendations state (for Author)
+    const [recommendedCreators, setRecommendedCreators] = useState([]);
+    const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+    const [showRecommendations, setShowRecommendations] = useState(false);
+    const [inviteStatus, setInviteStatus] = useState({});
 
     // Comments & Q/A state
     const [comments, setComments] = useState([]);
@@ -70,6 +78,33 @@ const ProjectDetail = () => {
             console.error('Failed to load applications:', err);
         } finally {
             setLoadingApps(false);
+        }
+    };
+
+    const fetchCreatorRecommendations = async () => {
+        setShowRecommendations(true);
+        setLoadingRecommendations(true);
+        try {
+            const res = await getRecommendedCreatorsForProject(id);
+            setRecommendedCreators(res.data || []);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoadingRecommendations(false);
+        }
+    };
+
+    const handleInvite = async (creatorId, defaultRole) => {
+        try {
+            await inviteCreatorToProject({
+                projectId: id,
+                userId: creatorId,
+                role: defaultRole || project.rolesNeeded?.[0]?.title || 'Collaborator',
+            });
+            setInviteStatus((prev) => ({ ...prev, [creatorId]: 'invited' }));
+        } catch (err) {
+            console.error(err);
+            setInviteStatus((prev) => ({ ...prev, [creatorId]: 'error' }));
         }
     };
 
@@ -316,7 +351,7 @@ const ProjectDetail = () => {
                     </p>
                 </div>
 
-                {/* PRIVATE TEAM WORKSPACE (Feature #4) */}
+                {/* PRIVATE TEAM WORKSPACE */}
                 {(isAuthor || isTeamMember) ? (
                     hasTeamLinks && (
                         <div
@@ -363,11 +398,23 @@ const ProjectDetail = () => {
 
                 {/* Roles Needed Section */}
                 <div className="card" style={{ padding: '28px', marginBottom: '32px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Roles & Skills Needed 👥</h3>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                            {project.rolesNeeded?.length || 0} Open Roles
-                        </span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Roles & Skills Needed 👥</h3>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                {project.rolesNeeded?.length || 0} Open Roles
+                            </span>
+                        </div>
+                        {isAuthor && (
+                            <button
+                                type="button"
+                                className="btn btn-ai btn-sm"
+                                onClick={fetchCreatorRecommendations}
+                                disabled={loadingRecommendations}
+                            >
+                                {loadingRecommendations ? '✨ Scouting...' : '🤖 AI Match Candidates'}
+                            </button>
+                        )}
                     </div>
 
                     {!project.rolesNeeded?.length ? (
@@ -408,6 +455,51 @@ const ProjectDetail = () => {
                             ))}
                         </div>
                     )}
+
+                    {/* AI RECOMMENDED CREATORS (Proactive Recruitment) */}
+                    {showRecommendations && (
+                        <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-color)' }}>
+                            <h4 style={{ fontSize: '1.05rem', fontWeight: 700, marginBottom: '12px', color: 'var(--accent-purple)' }}>
+                                🎯 AI Suggested Creators For Your Roles
+                            </h4>
+                            {loadingRecommendations ? (
+                                <div className="spinner spinner-sm"></div>
+                            ) : recommendedCreators.length === 0 ? (
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No unteamed creators with matching skills found currently.</p>
+                            ) : (
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '12px' }}>
+                                    {recommendedCreators.map((cand) => (
+                                        <div key={cand._id} style={{ padding: '14px', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                                <Link to={`/profile/${cand._id}`} style={{ fontWeight: 700, fontSize: '0.9rem', color: 'inherit', textDecoration: 'none' }}>
+                                                    {cand.fullName || cand.username}
+                                                </Link>
+                                                <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: 700 }}>
+                                                    ⭐ {cand.matchScore}%
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '10px' }}>
+                                                {cand.matchedSkills?.map((s) => (
+                                                    <span key={s} className="skill-tag green" style={{ fontSize: '0.68rem', padding: '1px 5px' }}>
+                                                        {s}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary btn-sm"
+                                                style={{ width: '100%', fontSize: '0.75rem' }}
+                                                disabled={inviteStatus[cand._id] === 'invited'}
+                                                onClick={() => handleInvite(cand._id, cand.matchedSkills?.[0])}
+                                            >
+                                                {inviteStatus[cand._id] === 'invited' ? '✓ Invited!' : '✉️ Send Invite'}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Team Members Section */}
@@ -433,7 +525,7 @@ const ProjectDetail = () => {
                     </div>
                 </div>
 
-                {/* COLLABORATIVE MILESTONES (Feature #5) */}
+                {/* COLLABORATIVE MILESTONES */}
                 <div className="card" style={{ padding: '28px', marginBottom: '32px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px' }}>📋 Milestones & Tasks</h3>
                     {project.milestones?.length === 0 ? (
@@ -498,7 +590,7 @@ const ProjectDetail = () => {
                     )}
                 </div>
 
-                {/* Q&A / COMMUNITY DISCUSSION (Feature #3) */}
+                {/* Q&A / COMMUNITY DISCUSSION */}
                 <div className="card" style={{ padding: '28px', marginBottom: '32px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '16px' }}>💬 Questions & Discussion ({comments.length})</h3>
 
@@ -599,7 +691,7 @@ const ProjectDetail = () => {
                                             </Link>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                 <span className="skill-tag" style={{ fontSize: '0.75rem' }}>
-                                                    Role: {app.role}
+                                                    Role: {app.role} {app.origin === 'invite' ? '(Invited)' : ''}
                                                 </span>
                                                 <span className={`app-status ${app.status}`}>{app.status}</span>
                                             </div>
@@ -621,7 +713,7 @@ const ProjectDetail = () => {
                                             </div>
                                         )}
 
-                                        {app.status === 'pending' && (
+                                        {app.status === 'pending' && app.origin === 'application' && (
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                                 <button
                                                     className="btn btn-primary btn-sm"

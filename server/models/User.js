@@ -40,6 +40,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
     }],
+    availability: {
+        type: String,
+        enum: ['open', 'selective', 'busy'],
+        default: 'open',
+    },
+    weeklyHours: {
+        type: String,
+        default: '5-10 hrs/week',
+        trim: true,
+    },
     socialLinks: {
         github: { type: String, default: '' },
         linkedin: { type: String, default: '' },

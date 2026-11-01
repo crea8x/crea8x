@@ -16,6 +16,11 @@ const applicationSchema = new mongoose.Schema({
         required: true,
         trim: true,
     },
+    origin: {
+        type: String,
+        enum: ['application', 'invite'],
+        default: 'application',
+    },
     message: {
         type: String,
         default: '',
@@ -30,8 +35,6 @@ const applicationSchema = new mongoose.Schema({
     timestamps: true,
 });
 
-// Ensure a user cannot apply to the same project role multiple times
 applicationSchema.index({ project: 1, applicant: 1, role: 1 }, { unique: true });
 
 module.exports = mongoose.model('Application', applicationSchema);
-
