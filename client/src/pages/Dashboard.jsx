@@ -99,7 +99,7 @@ const Dashboard = () => {
                         <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '16px' }}>
                             🤝 Your Collaboration Applications ({myApplications.length})
                         </h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '16px' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '16px' }}>
                             {myApplications.map((app) => (
                                 <div key={app._id} className="card" style={{ padding: '20px' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
@@ -128,7 +128,7 @@ const Dashboard = () => {
                 {/* Skills & AI Insights */}
                 {user.skills?.length > 0 && (
                     <div className="card" style={{ marginBottom: '40px', padding: '24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                             <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Your Skills Profile</h3>
                             <button className="btn btn-ai btn-sm" onClick={handleGetInsights} disabled={loadingInsights}>
                                 {loadingInsights ? '✨ Analyzing...' : '✨ AI Skill Insights'}
@@ -162,7 +162,7 @@ const Dashboard = () => {
 
                 {/* Your Projects */}
                 <div style={{ marginBottom: '40px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
                         <h2 style={{ fontSize: '1.3rem', fontWeight: 700 }}>Your Projects & Ideas</h2>
                         <Link to="/project/new" className="btn btn-primary btn-sm">+ Share New Idea</Link>
                     </div>

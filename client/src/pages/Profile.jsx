@@ -172,7 +172,7 @@ const Profile = () => {
                                 <label className="form-label">Portfolio URL</label>
                                 <input className="form-input" value={editForm.portfolio} onChange={(e) => setEditForm({ ...editForm, portfolio: e.target.value })} placeholder="https://yoursite.com" />
                             </div>
-                            <div style={{ display: 'flex', gap: '12px' }}>
+                            <div className="form-actions">
                                 <button className="btn btn-primary" onClick={handleSave} disabled={saving} style={{ flex: 1 }}>
                                     {saving ? 'Saving...' : 'Save Changes'}
                                 </button>
@@ -183,7 +183,7 @@ const Profile = () => {
                 )}
 
                 {/* Portfolio Navigation Tabs */}
-                <div style={{ marginTop: '40px', marginBottom: '24px', display: 'flex', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                <div className="profile-tabs">
                     <button
                         className={`btn ${activeTab === 'created' ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => setActiveTab('created')}

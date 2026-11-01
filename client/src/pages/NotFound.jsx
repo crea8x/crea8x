@@ -4,7 +4,7 @@ const NotFound = () => {
     return (
         <div className="page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
             <div>
-                <h1 style={{ fontSize: '6rem', fontWeight: 900, background: 'var(--gradient-main)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '8px' }}>
+                <h1 style={{ fontSize: 'clamp(3.5rem, 15vw, 6rem)', fontWeight: 900, background: 'var(--gradient-main)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', marginBottom: '8px' }}>
                     404
                 </h1>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '12px' }}>Page Not Found</h2>

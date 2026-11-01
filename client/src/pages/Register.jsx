@@ -62,7 +62,7 @@ const Register = () => {
                 {error && <div className="alert alert-error">{error}</div>}
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-grid-2">
                         <div className="form-group">
                             <label className="form-label">Full Name</label>
                             <input

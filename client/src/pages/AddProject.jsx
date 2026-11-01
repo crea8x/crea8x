@@ -176,7 +176,7 @@ const AddProject = () => {
                         border: '1px solid rgba(139, 92, 246, 0.3)',
                     }}
                 >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    <div className="ai-architect-banner">
                         <div>
                             <h2 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '6px' }}>
                                 🤖 AI Idea-to-Team Architect
@@ -204,7 +204,7 @@ const AddProject = () => {
                 {error && <div className="alert alert-error">{error}</div>}
 
                 <form onSubmit={handleSubmit}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px' }}>
+                    <div className="form-grid-2-1">
                         <div className="form-group">
                             <label className="form-label">Idea / Project Title *</label>
                             <input
@@ -260,16 +260,7 @@ const AddProject = () => {
                         </div>
 
                         {rolesNeeded.map((role, idx) => (
-                            <div
-                                key={idx}
-                                style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: '2fr 2fr 1fr auto',
-                                    gap: '12px',
-                                    alignItems: 'center',
-                                    marginBottom: '12px',
-                                }}
-                            >
+                            <div key={idx} className="role-form-row">
                                 <input
                                     className="form-input"
                                     placeholder="Role Title (e.g. Frontend Dev)"
@@ -402,7 +393,7 @@ const AddProject = () => {
                         )}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-grid-2">
                         <div className="form-group">
                             <label className="form-label">Live URL (optional)</label>
                             <input
@@ -436,7 +427,7 @@ const AddProject = () => {
                         />
                     </div>
 
-                    <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+                    <div className="form-actions">
                         <button type="submit" className="btn btn-primary btn-lg" style={{ flex: 1 }} disabled={loading}>
                             {loading ? 'Publishing Idea...' : '🚀 Publish & Recruit Collaborators'}
                         </button>

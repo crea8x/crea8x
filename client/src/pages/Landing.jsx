@@ -55,9 +55,9 @@ const Landing = () => {
                         <p>From an initial raw concept to a fully launched MVP team in four simple steps.</p>
                     </div>
 
-                    <div className="grid-2" style={{ gap: '24px' }}>
-                        <div className="card" style={{ padding: '32px', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                            <div style={{ fontSize: '2.4rem', background: 'rgba(139, 92, 246, 0.15)', padding: '16px', borderRadius: '16px', lineHeight: 1 }}>
+                    <div className="grid-2">
+                        <div className="card step-card">
+                            <div style={{ fontSize: '2.4rem', background: 'rgba(139, 92, 246, 0.15)', padding: '16px', borderRadius: '16px', lineHeight: 1, flexShrink: 0 }}>
                                 💡
                             </div>
                             <div>
@@ -68,8 +68,8 @@ const Landing = () => {
                             </div>
                         </div>
 
-                        <div className="card" style={{ padding: '32px', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                            <div style={{ fontSize: '2.4rem', background: 'rgba(6, 182, 212, 0.15)', padding: '16px', borderRadius: '16px', lineHeight: 1 }}>
+                        <div className="card step-card">
+                            <div style={{ fontSize: '2.4rem', background: 'rgba(6, 182, 212, 0.15)', padding: '16px', borderRadius: '16px', lineHeight: 1, flexShrink: 0 }}>
                                 🎯
                             </div>
                             <div>
@@ -80,8 +80,8 @@ const Landing = () => {
                             </div>
                         </div>
 
-                        <div className="card" style={{ padding: '32px', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                            <div style={{ fontSize: '2.4rem', background: 'rgba(236, 72, 153, 0.15)', padding: '16px', borderRadius: '16px', lineHeight: 1 }}>
+                        <div className="card step-card">
+                            <div style={{ fontSize: '2.4rem', background: 'rgba(236, 72, 153, 0.15)', padding: '16px', borderRadius: '16px', lineHeight: 1, flexShrink: 0 }}>
                                 🤝
                             </div>
                             <div>
@@ -92,8 +92,8 @@ const Landing = () => {
                             </div>
                         </div>
 
-                        <div className="card" style={{ padding: '32px', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                            <div style={{ fontSize: '2.4rem', background: 'rgba(16, 185, 129, 0.15)', padding: '16px', borderRadius: '16px', lineHeight: 1 }}>
+                        <div className="card step-card">
+                            <div style={{ fontSize: '2.4rem', background: 'rgba(16, 185, 129, 0.15)', padding: '16px', borderRadius: '16px', lineHeight: 1, flexShrink: 0 }}>
                                 🚀
                             </div>
                             <div>
@@ -152,8 +152,8 @@ const Landing = () => {
             {/* CTA Section */}
             <section style={{ padding: '80px 0', textAlign: 'center' }}>
                 <div className="container">
-                    <div className="card-glass" style={{ padding: '60px 40px', maxWidth: '720px', margin: '0 auto', borderRadius: '24px' }}>
-                        <h2 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '16px' }}>
+                    <div className="card-glass cta-card">
+                        <h2 style={{ fontSize: 'clamp(1.6rem, 4vw, 2.2rem)', fontWeight: 800, marginBottom: '16px' }}>
                             The missing piece isn't another resource.<br />It's the right people.
                         </h2>
                         <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '1.05rem', lineHeight: 1.7 }}>

@@ -277,7 +277,7 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Title */}
-                <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '16px' }}>{project.title}</h1>
+                <h1 className="project-detail-title">{project.title}</h1>
 
                 {/* Author Info */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
@@ -293,7 +293,7 @@ const ProjectDetail = () => {
                 </div>
 
                 {/* Action Buttons */}
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '32px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <div className="project-detail-actions">
                     <button className={`btn ${isLiked ? 'btn-primary' : 'btn-secondary'}`} onClick={handleLike}>
                         {isLiked ? '❤️' : '🤍'} {project.likes?.length || 0} {project.likes?.length === 1 ? 'Like' : 'Likes'}
                     </button>
@@ -328,7 +328,7 @@ const ProjectDetail = () => {
                     )}
 
                     {isAuthor && (
-                        <button className="btn btn-danger btn-sm" onClick={handleDelete} style={{ marginLeft: 'auto' }}>
+                        <button className="btn btn-danger btn-sm" onClick={handleDelete}>
                             🗑️ Delete Project
                         </button>
                     )}
@@ -576,7 +576,7 @@ const ProjectDetail = () => {
                     )}
 
                     {(isAuthor || isTeamMember) && (
-                        <form onSubmit={handleAddMilestone} style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
+                        <form onSubmit={handleAddMilestone} className="milestone-form">
                             <input
                                 className="form-input"
                                 placeholder="Add a new milestone or deliverable..."
@@ -787,7 +787,7 @@ const ProjectDetail = () => {
                                     />
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
+                                <div className="form-actions">
                                     <button
                                         type="submit"
                                         className="btn btn-primary"

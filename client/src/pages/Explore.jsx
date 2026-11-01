@@ -124,7 +124,7 @@ const Explore = () => {
                 </div>
 
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                <div className="explore-tabs">
                     <button
                         className={`btn ${activeTab === 'projects' ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => setActiveTab('projects')}
@@ -144,7 +144,7 @@ const Explore = () => {
                     <>
                         {/* Search & Match Toggle */}
                         <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                            <form onSubmit={handleSearch} className="search-bar" style={{ flex: 1, minWidth: '280px', margin: 0 }}>
+                            <form onSubmit={handleSearch} className="search-bar" style={{ flex: 1, minWidth: 'min(100%, 260px)', margin: 0 }}>
                                 <input
                                     type="text"
                                     className="search-input"

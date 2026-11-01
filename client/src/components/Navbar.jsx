@@ -11,10 +11,13 @@ const Navbar = () => {
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [openNotifs, setOpenNotifs] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const notifRef = useRef(null);
+    const navRef = useRef(null);
 
     const handleLogout = () => {
         logout();
+        setMobileMenuOpen(false);
         navigate('/');
     };
 
@@ -36,11 +39,20 @@ const Navbar = () => {
         return () => clearInterval(interval);
     }, [user]);
 
-    // Close notifications when clicking outside
+    // Close notifications and mobile menu when navigating
+    useEffect(() => {
+        setMobileMenuOpen(false);
+        setOpenNotifs(false);
+    }, [location.pathname]);
+
+    // Close notifications or menu when clicking outside
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (notifRef.current && !notifRef.current.contains(e.target)) {
                 setOpenNotifs(false);
+            }
+            if (navRef.current && !navRef.current.contains(e.target)) {
+                setMobileMenuOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -70,6 +82,7 @@ const Navbar = () => {
             }
         }
         setOpenNotifs(false);
+        setMobileMenuOpen(false);
         if (notif.project?._id || notif.project) {
             navigate(`/project/${notif.project._id || notif.project}`);
         }
@@ -78,104 +91,122 @@ const Navbar = () => {
     const isActive = (path) => (location.pathname === path ? 'navbar-link active' : 'navbar-link');
 
     return (
-        <nav className="navbar">
+        <nav className="navbar" ref={navRef}>
             <div className="navbar-inner">
-                <Link to="/" className="navbar-logo">
+                <Link to="/" className="navbar-logo" onClick={() => setMobileMenuOpen(false)}>
                     Crea<span className="logo-infinity">∞</span>X
                 </Link>
-                <div className="navbar-links">
+
+                {/* Navigation Links (Desktop horizontal, Mobile slide-down drawer) */}
+                <div className={`navbar-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>
                     {user ? (
                         <>
-                            <Link to="/dashboard" className={isActive('/dashboard')}>
+                            <Link to="/dashboard" className={isActive('/dashboard')} onClick={() => setMobileMenuOpen(false)}>
                                 Dashboard
                             </Link>
-                            <Link to="/explore" className={isActive('/explore')}>
+                            <Link to="/explore" className={isActive('/explore')} onClick={() => setMobileMenuOpen(false)}>
                                 Explore
                             </Link>
-                            <Link to={`/profile/${user._id}`} className={isActive(`/profile/${user._id}`)}>
+                            <Link to={`/profile/${user._id}`} className={isActive(`/profile/${user._id}`)} onClick={() => setMobileMenuOpen(false)}>
                                 Profile
                             </Link>
-                            <Link to="/project/new" className={isActive('/project/new')}>
+                            <Link to="/project/new" className={isActive('/project/new')} onClick={() => setMobileMenuOpen(false)}>
                                 <span className="btn btn-primary btn-sm">+ Idea</span>
                             </Link>
-
-                            {/* Notifications Bell */}
-                            <div className="notification-container" ref={notifRef}>
-                                <button
-                                    type="button"
-                                    className="notification-trigger"
-                                    onClick={() => setOpenNotifs(!openNotifs)}
-                                    title="Notifications"
-                                >
-                                    🔔
-                                    {unreadCount > 0 && (
-                                        <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
-                                    )}
-                                </button>
-
-                                {openNotifs && (
-                                    <div className="notification-dropdown">
-                                        <div className="notification-header">
-                                            <h4>Notifications</h4>
-                                            {unreadCount > 0 && (
-                                                <button
-                                                    onClick={handleMarkAllRead}
-                                                    style={{
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        color: 'var(--accent-purple)',
-                                                        fontSize: '0.75rem',
-                                                        cursor: 'pointer',
-                                                        fontWeight: 600,
-                                                    }}
-                                                >
-                                                    Mark all read
-                                                </button>
-                                            )}
-                                        </div>
-                                        <div className="notification-list">
-                                            {notifications.length === 0 ? (
-                                                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                                    No notifications yet
-                                                </div>
-                                            ) : (
-                                                notifications.map((n) => (
-                                                    <div
-                                                        key={n._id}
-                                                        className={`notification-item ${!n.read ? 'unread' : ''}`}
-                                                        onClick={() => handleNotificationClick(n)}
-                                                    >
-                                                        <div>{n.message}</div>
-                                                        <div className="notification-time">
-                                                            {new Date(n.createdAt).toLocaleDateString([], {
-                                                                month: 'short',
-                                                                day: 'numeric',
-                                                                hour: '2-digit',
-                                                                minute: '2-digit',
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                ))
-                                            )}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
                             <button onClick={handleLogout} className="navbar-link" style={{ background: 'none' }}>
                                 Logout
                             </button>
                         </>
                     ) : (
                         <>
-                            <Link to="/login" className={isActive('/login')}>
+                            <Link to="/explore" className={isActive('/explore')} onClick={() => setMobileMenuOpen(false)}>
+                                Explore
+                            </Link>
+                            <Link to="/login" className={isActive('/login')} onClick={() => setMobileMenuOpen(false)}>
                                 Login
                             </Link>
-                            <Link to="/register">
+                            <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
                                 <span className="btn btn-primary btn-sm">Get Started</span>
                             </Link>
                         </>
                     )}
+                </div>
+
+                {/* Navbar Controls (Notifications & Mobile Hamburger Button) */}
+                <div className="navbar-controls">
+                    {user && (
+                        <div className="notification-container" ref={notifRef}>
+                            <button
+                                type="button"
+                                className="notification-trigger"
+                                onClick={() => setOpenNotifs(!openNotifs)}
+                                title="Notifications"
+                                aria-label="Notifications"
+                            >
+                                🔔
+                                {unreadCount > 0 && (
+                                    <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                                )}
+                            </button>
+
+                            {openNotifs && (
+                                <div className="notification-dropdown">
+                                    <div className="notification-header">
+                                        <h4>Notifications</h4>
+                                        {unreadCount > 0 && (
+                                            <button
+                                                onClick={handleMarkAllRead}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: 'var(--accent-purple)',
+                                                    fontSize: '0.75rem',
+                                                    cursor: 'pointer',
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                Mark all read
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="notification-list">
+                                        {notifications.length === 0 ? (
+                                            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                                No notifications yet
+                                            </div>
+                                        ) : (
+                                            notifications.map((n) => (
+                                                <div
+                                                    key={n._id}
+                                                    className={`notification-item ${!n.read ? 'unread' : ''}`}
+                                                    onClick={() => handleNotificationClick(n)}
+                                                >
+                                                    <div>{n.message}</div>
+                                                    <div className="notification-time">
+                                                        {new Date(n.createdAt).toLocaleDateString([], {
+                                                            month: 'short',
+                                                            day: 'numeric',
+                                                            hour: '2-digit',
+                                                            minute: '2-digit',
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <button
+                        type="button"
+                        className="mobile-toggle"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        aria-label="Toggle navigation menu"
+                    >
+                        {mobileMenuOpen ? '✕' : '☰'}
+                    </button>
                 </div>
             </div>
         </nav>
