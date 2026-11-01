@@ -274,9 +274,7 @@ const Admin = () => {
                         <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '4px 12px', borderRadius: '9999px', background: 'rgba(139, 92, 246, 0.15)', color: 'var(--accent-purple)', fontSize: '0.8rem', fontWeight: 700, marginBottom: '8px' }}>
                             🛡️ Platform Operations Center
                         </div>
-                        <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.4rem)', fontWeight: 800, margin: 0 }}>
-                            Crea<span className="logo-infinity">∞</span>X Administration
-                        </h1>
+                        <h1 style={{ fontSize: 'clamp(1.8rem, 5vw, 2.4rem)', fontWeight: 800, margin: 0 }}>Crea<span className="logo-infinity">∞</span>X Administration</h1>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.92rem', margin: '4px 0 0 0' }}>
                             Manage creators, moderate startup projects, dispatch platform announcements, and oversee collaboration metrics.
                         </p>

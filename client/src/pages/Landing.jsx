@@ -17,7 +17,7 @@ const Landing = () => {
                         </h1>
                         <p>
                             Have a vision for a project but lack the team or technical expertise? Or have skills and want to build something meaningful?
-                            <strong> Crea<span className="logo-infinity">∞</span>X</strong> bridges the gap between visionaries and skilled builders.
+                            <strong>Crea<span className="logo-infinity">∞</span>X</strong> bridges the gap between visionaries and skilled builders.
                         </p>
                         <div className="hero-actions">
                             {user ? (

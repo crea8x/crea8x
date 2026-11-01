@@ -229,14 +229,17 @@ select {
 }
 
 .navbar-logo {
+  display: inline-flex;
+  align-items: center;
   font-size: 1.6rem;
   font-weight: 800;
   background: var(--gradient-main);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.5px;
+  letter-spacing: normal;
   white-space: nowrap;
+  user-select: none;
 }
 
 .logo-infinity {

@@ -93,9 +93,7 @@ const Navbar = () => {
     return (
         <nav className="navbar" ref={navRef}>
             <div className="navbar-inner">
-                <Link to="/" className="navbar-logo" onClick={() => setMobileMenuOpen(false)}>
-                    Crea<span className="logo-infinity">∞</span>X
-                </Link>
+                <Link to="/" className="navbar-logo" onClick={() => setMobileMenuOpen(false)}>Crea<span className="logo-infinity">∞</span>X</Link>
 
                 {/* Navigation Links (Desktop horizontal, Mobile slide-down drawer) */}
                 <div className={`navbar-links ${mobileMenuOpen ? 'mobile-open' : ''}`}>

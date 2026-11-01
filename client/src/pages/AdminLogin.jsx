@@ -62,9 +62,7 @@ const AdminLogin = () => {
                         Staff Operations Terminal
                     </div>
 
-                    <h1 style={{ fontSize: '1.65rem', fontWeight: 800, margin: '4px 0 6px 0' }}>
-                        Crea<span className="logo-infinity">∞</span>X Staff Console
-                    </h1>
+                    <h1 style={{ fontSize: '1.65rem', fontWeight: 800, margin: '4px 0 6px 0' }}>Crea<span className="logo-infinity">∞</span>X Staff Console</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
                         Restricted portal for platform administrators and operators.
                     </p>
@@ -145,3 +143,4 @@ const AdminLogin = () => {
 };
 
 export default AdminLogin;
+
