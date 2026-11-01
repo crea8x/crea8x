@@ -15,16 +15,33 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use('/api/auth', require('./routes/authRoutes'));
-app.use('/api/users', require('./routes/userRoutes'));
-app.use('/api/projects', require('./routes/projectRoutes'));
-app.use('/api/ai', require('./routes/aiRoutes'));
+// Root endpoint
+app.get('/', (req, res) => {
+    res.json({
+        name: 'Crea8X API',
+        version: '1.0.0',
+        status: 'online',
+        message: 'Welcome to the Crea8X API 🚀',
+        endpoints: {
+            health: '/api/health',
+            auth: '/api/auth',
+            users: '/api/users',
+            projects: '/api/projects',
+            ai: '/api/ai'
+        }
+    });
+});
 
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Crea8X API is running 🚀' });
 });
+
+// Routes
+app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/projects', require('./routes/projectRoutes'));
+app.use('/api/ai', require('./routes/aiRoutes'));
 
 // Error handler
 app.use((err, req, res, next) => {
