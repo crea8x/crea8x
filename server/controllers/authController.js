@@ -38,6 +38,7 @@ const register = async (req, res) => {
             fullName: user.fullName,
             skills: user.skills,
             role: user.role,
+            status: user.status,
             token: generateToken(user._id),
         });
     } catch (error) {
@@ -59,6 +60,12 @@ const login = async (req, res) => {
             return res.status(401).json({ message: 'Invalid email or password' });
         }
 
+        if (user.status === 'suspended') {
+            return res.status(403).json({
+                message: 'Your account has been suspended by an administrator. Please contact support.',
+            });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ message: 'Invalid email or password' });
@@ -74,6 +81,7 @@ const login = async (req, res) => {
             skills: user.skills,
             socialLinks: user.socialLinks,
             role: user.role,
+            status: user.status,
             token: generateToken(user._id),
         });
     } catch (error) {

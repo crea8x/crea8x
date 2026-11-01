@@ -110,6 +110,11 @@ const Navbar = () => {
                             <Link to={`/profile/${user._id}`} className={isActive(`/profile/${user._id}`)} onClick={() => setMobileMenuOpen(false)}>
                                 Profile
                             </Link>
+                            {user.role === 'admin' && (
+                                <Link to="/admin" className={isActive('/admin')} onClick={() => setMobileMenuOpen(false)}>
+                                    🛡️ Admin
+                                </Link>
+                            )}
                             <Link to="/project/new" className={isActive('/project/new')} onClick={() => setMobileMenuOpen(false)}>
                                 <span className="btn btn-primary btn-sm">+ Idea</span>
                             </Link>

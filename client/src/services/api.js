@@ -64,4 +64,18 @@ export const aiGenerateBio = (data) => api.post('/ai/generate-bio', data);
 export const aiSuggestTags = (data) => api.post('/ai/suggest-tags', data);
 export const aiSkillInsights = (data) => api.post('/ai/skill-insights', data);
 
+// ===== ADMIN OPERATIONS =====
+export const getAdminStats = () => api.get('/admin/stats');
+export const getAdminUsers = (params) => api.get('/admin/users', { params });
+export const updateAdminUserRole = (id, role) => api.put(`/admin/users/${id}/role`, { role });
+export const toggleAdminUserStatus = (id) => api.put(`/admin/users/${id}/status`);
+export const deleteAdminUser = (id) => api.delete(`/admin/users/${id}`);
+export const getAdminProjects = (params) => api.get('/admin/projects', { params });
+export const toggleAdminProjectFeatured = (id) => api.put(`/admin/projects/${id}/featured`);
+export const updateAdminProjectStage = (id, stage) => api.put(`/admin/projects/${id}/stage`, { stage });
+export const deleteAdminProject = (id) => api.delete(`/admin/projects/${id}`);
+export const broadcastAdminAnnouncement = (data) => api.post('/admin/broadcast', data);
+export const getAdminComments = () => api.get('/admin/comments');
+export const deleteAdminComment = (id) => api.delete(`/admin/comments/${id}`);
+
 export default api;

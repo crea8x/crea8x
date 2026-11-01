@@ -19,7 +19,7 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.json({
         name: 'Crea8X API',
-        version: '1.1.0',
+        version: '1.2.0',
         status: 'online',
         message: 'Welcome to the Crea8X API 🚀',
         endpoints: {
@@ -29,7 +29,8 @@ app.get('/', (req, res) => {
             projects: '/api/projects',
             applications: '/api/applications',
             notifications: '/api/notifications',
-            ai: '/api/ai'
+            ai: '/api/ai',
+            admin: '/api/admin'
         }
     });
 });
@@ -46,6 +47,7 @@ app.use('/api/projects', require('./routes/projectRoutes'));
 app.use('/api/applications', require('./routes/applicationRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 // Error handler
 app.use((err, req, res, next) => {
